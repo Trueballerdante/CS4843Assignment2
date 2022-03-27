@@ -26,7 +26,7 @@ Three YAML files are utilised to set up specific parts of the infrastructure:
 
 Infrastructure Layout:
 AWS Region: US West (Oregon) us-west-2
-Virtual Private Cloud(VPC): CIDR = 10.0.0.0/16
+- Virtual Private Cloud(VPC): CIDR = 10.0.0.0/16
     - First Availablility Zone:
         - Public Subnet 1: CIDR = 10.0.0.0/24
             - Nat Gateway 1: Allows Private Subnet 1 egress internet access
