@@ -1,0 +1,185 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: >
+  Creates the security groups
+Parameters:
+  EnvironmentName:
+    Description: An environment name that will be prefixed to resource names
+    Type: String
+  NetworkEnvironmentName:
+    Description: The name of the network environment
+    Type: String
+  AMItoUse:
+    Description: The ami that is used
+    Type: String
+  KeyName:
+    Description: The key to use
+    Type: String
+Resources:
+  ServerSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Allow http to our hosts and SSH from local only
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+      SecurityGroupEgress:
+        - IpProtocol: tcp
+          FromPort: 0
+          ToPort: 65535
+          CidrIp: 0.0.0.0/0
+      Tags:
+        - Key: Name
+          Value: serverSecurityGroup
+      VpcId: !Select [ 0, [Fn::ImportValue: !Sub '${NetworkEnvironmentName}-VPCId']]
+  WebAppLaunchConfig:
+    Type: AWS::AutoScaling::LaunchConfiguration
+    Properties:
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          yum update -y
+          yum install -y httpd
+          systemctl start httpd          
+      ImageId: !Ref AMItoUse 
+      KeyName: !Ref KeyName
+      SecurityGroups:
+      - Ref: ServerSecurityGroup
+      InstanceType: t3.micro
+      BlockDeviceMappings:
+      - DeviceName: "/dev/sdk"
+        Ebs:
+          VolumeSize: '10'
+  WebAppGroup:
+    Type: AWS::AutoScaling::AutoScalingGroup
+    Properties:
+      VPCZoneIdentifier:
+      - Fn::ImportValue: 
+          !Sub "${NetworkEnvironmentName}-PrivateSubnets"
+      LaunchConfigurationName: !Ref WebAppLaunchConfig
+      MinSize: '3'
+      MaxSize: '5'
+      TargetGroupARNs:
+      - Ref: WebAppTargetGroup
+  LBSecGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Allow http to our load balancer
+      VpcId: !Select [ 0, [Fn::ImportValue: !Sub '${NetworkEnvironmentName}-VPCId']]
+      SecurityGroupIngress:
+      - IpProtocol: tcp
+        FromPort: 80
+        ToPort: 80
+        CidrIp: 0.0.0.0/0
+      SecurityGroupEgress:
+      - IpProtocol: tcp
+        FromPort: 80
+        ToPort: 80
+        CidrIp: 0.0.0.0/0
+  WebAppLB:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      Subnets:
+      - Fn::ImportValue: !Sub "${NetworkEnvironmentName}-PublicSubnet1Id"
+      - Fn::ImportValue: !Sub "${NetworkEnvironmentName}-PublicSubnet2Id"
+      SecurityGroups:
+      - Ref: LBSecGroup
+  Listener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      DefaultActions:
+      - Type: forward
+        TargetGroupArn:
+          Ref: WebAppTargetGroup
+      LoadBalancerArn:
+        Ref: WebAppLB
+      Port: 80
+      Protocol: HTTP
+  ALBListenerRule:
+    Type: AWS::ElasticLoadBalancingV2::ListenerRule
+    Properties:
+      Actions:
+      - Type: forward
+        TargetGroupArn: !Ref 'WebAppTargetGroup'
+      Conditions:
+      - Field: path-pattern
+        Values: [/]
+      ListenerArn: !Ref 'Listener'
+      Priority: 1
+  WebAppTargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      HealthCheckIntervalSeconds: 10
+      HealthCheckPath: /
+      HealthCheckProtocol: HTTP
+      HealthCheckTimeoutSeconds: 8
+      HealthyThresholdCount: 2
+      Port: 80
+      Protocol: HTTP
+      UnhealthyThresholdCount: 5
+      VpcId: 
+        Fn::ImportValue:
+          Fn::Sub: "${NetworkEnvironmentName}-VPCId"
+
+  Ec2Instance1:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: !Ref AMItoUse
+      InstanceType: t2.micro
+      KeyName: !Ref KeyName
+      SecurityGroupIds: [!GetAtt ServerSecurityGroup.GroupId]
+      SubnetId: !Select [ 0, [Fn::ImportValue: !Sub '${NetworkEnvironmentName}-PrivateSubnet1Id']]
+      Tags:
+        - Key: Name
+          Value: Ec2Instance1
+      UserData:
+        Fn::Base64:
+          !Sub |
+            #!/bin/bash
+            yum update -y
+            yum install -y httpd.x86_64
+            systemctl start httpd.service
+            systemctl enable httpd.service
+            echo Hello World from Apache Server 1 > /var/www/html/index.html
+  Ec2Instance2:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: !Ref AMItoUse
+      InstanceType: t2.micro
+      KeyName: !Ref KeyName
+      SecurityGroupIds: [!GetAtt ServerSecurityGroup.GroupId]
+      SubnetId: !Select [ 0, [Fn::ImportValue: !Sub '${NetworkEnvironmentName}-PrivateSubnet2Id']]
+      Tags:
+        - Key: Name
+          Value: Ec2Instance2
+      UserData:
+        Fn::Base64:
+          !Sub |
+            #!/bin/bash
+            yum update -y
+            yum install -y httpd.x86_64
+            systemctl start httpd.service
+            systemctl enable httpd.service
+            echo Hello World from Apache Server 2 > /var/www/html/index.html
+
+Outputs:
+  ServerSercurityGroupId:
+    Description: Id of the security group
+    Value: !GetAtt ServerSecurityGroup.GroupId
+    Export:
+      Name: !Sub '${EnvironmentName}-ServerSecurityGroupId'
+  Ec2Instance1Id:
+    Description: Id of the first ec2 instance
+    Value: !Ref Ec2Instance1
+    Export:
+      Name: !Sub '${EnvironmentName}-Ec2Instance1Id'
+  Ec2Instance2Id:
+    Description: Id of the second ec2 instance
+    Value: !Ref Ec2Instance2
+    Export:
+      Name: !Sub '${EnvironmentName}-Ec2Instance2Id'

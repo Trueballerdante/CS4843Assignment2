@@ -1,0 +1,134 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: >
+  Creates MySQL database
+Parameters:
+  EnvironmentName:
+    Description: An environment name that will be prefixed to resource names
+    Type: String
+
+  NetworkEnvironmentName:
+    Description: The name of the network environment
+    Type: String
+
+  SecurityAndServersEnvironmentName:
+    Description: The name of the network environment
+    Type: String
+
+  Database1InstanceIdentifier:
+    Description: Instance identifier name
+    Type: String
+
+  Database1Name:
+    Description: MySQL database name
+    Type: String
+
+  Database2InstanceIdentifier:
+    Description: Instance identifier name
+    Type: String
+
+  Database2Name:
+    Description: MySQL database name
+    Type: String
+
+  DatabaseUser:
+    Description: Username for MySQL database access
+    Type: String
+
+  DatabasePassword:
+    Description: Password for MySQL database access
+    Type: String
+
+  DatabaseBackupRetentionPeriod:
+    Description: The number of days which automatic DB snapshots are retained
+    Type: Number
+
+  DatabaseAllocatedStorage:
+    Description: The size of the database
+    Type: Number
+
+  DatabaseInstanceClass:
+    Description: The database instance type
+    Type: String
+
+Resources:
+  DatabaseSubnetGroup:
+    Type: AWS::RDS::DBSubnetGroup
+    Properties: 
+      DBSubnetGroupDescription: Subnet group for RDS database
+      DBSubnetGroupName: DBSubnetGroup
+      SubnetIds: 
+        - !Select [ 0, [Fn::ImportValue: !Sub '${NetworkEnvironmentName}-PrivateSubnet1Id']]
+        - !Select [ 0, [Fn::ImportValue: !Sub '${NetworkEnvironmentName}-PrivateSubnet2Id']]
+      Tags: 
+        - Key: Name
+          Value: DBSubnetGroup
+
+  MySQLDatabase1:
+    Type: AWS::RDS::DBInstance
+    Properties:
+      AllocatedStorage: !Ref DatabaseAllocatedStorage
+      AvailabilityZone: !Select [0, !GetAZs '' ]
+      BackupRetentionPeriod: !Ref DatabaseBackupRetentionPeriod
+      DBInstanceClass: !Ref DatabaseInstanceClass
+      DBName: !Ref Database1Name
+      DBInstanceIdentifier: !Ref Database1InstanceIdentifier
+      DBSubnetGroupName: !Ref DatabaseSubnetGroup
+      Engine: MySQL
+      EngineVersion: 8.0.28
+      MasterUsername: !Ref DatabaseUser
+      MasterUserPassword: !Ref DatabasePassword
+      Tags: 
+      - Key: Name
+        Value: MySQLDatabase1
+  MySQLDatabase2:
+    Type: AWS::RDS::DBInstance
+    Properties:
+      AllocatedStorage: !Ref DatabaseAllocatedStorage
+      AvailabilityZone: !Select [1, !GetAZs '' ]
+      BackupRetentionPeriod: !Ref DatabaseBackupRetentionPeriod
+      DBInstanceClass: !Ref DatabaseInstanceClass
+      DBName: !Ref Database2Name
+      DBInstanceIdentifier: !Ref Database2InstanceIdentifier
+      DBSubnetGroupName: !Ref DatabaseSubnetGroup
+      Engine: MySQL
+      EngineVersion: 8.0.28
+      MasterUsername: !Ref DatabaseUser
+      MasterUserPassword: !Ref DatabasePassword
+      Tags: 
+      - Key: Name
+        Value: MySQLDatabase2
+  
+  Ec2InstanceStorage1:
+    Type: AWS::EC2::Volume
+    Properties: 
+      AutoEnableIO: false
+      AvailabilityZone: !Select [ 0, !GetAZs '' ]
+      Encrypted: false
+      MultiAttachEnabled: false
+      Size: 1
+      Tags: 
+        - Key: Name
+          Value: Ec2InstanceStorage1
+  AttachStorage1:
+    Type: AWS::EC2::VolumeAttachment
+    Properties: 
+      Device: /dev/sdk
+      InstanceId: !Select [ 0, [Fn::ImportValue: !Sub "${SecurityAndServersEnvironmentName}-Ec2Instance1Id"]]
+      VolumeId: !Ref  Ec2InstanceStorage1
+  Ec2InstanceStorage2:
+    Type: AWS::EC2::Volume
+    Properties: 
+      AutoEnableIO: false
+      AvailabilityZone: !Select [ 1, !GetAZs '' ]
+      Encrypted: false
+      MultiAttachEnabled: false
+      Size: 1
+      Tags: 
+        - Key: Name
+          Value: Ec2InstanceStorage2
+  AttachStorage2:
+    Type: AWS::EC2::VolumeAttachment
+    Properties: 
+      Device: /dev/sdk
+      InstanceId: !Select [ 0, [Fn::ImportValue: !Sub "${SecurityAndServersEnvironmentName}-Ec2Instance2Id"]]
+      VolumeId: !Ref Ec2InstanceStorage2

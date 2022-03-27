@@ -1,0 +1,18 @@
+[
+    {
+        "ParameterKey": "EnvironmentName",
+        "ParameterValue": "SecurityAndServers"
+    },
+    {
+        "ParameterKey": "NetworkEnvironmentName",
+        "ParameterValue": "SimpleVPCNetwork"
+    },
+    {
+        "ParameterKey": "AMItoUse",
+        "ParameterValue": "ami-00ee4df451840fa9d"
+    },
+    {
+        "ParameterKey": "KeyName",
+        "ParameterValue": "cloudComputing2022"
+    }
+]

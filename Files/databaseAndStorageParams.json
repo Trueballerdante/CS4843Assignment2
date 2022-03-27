@@ -1,0 +1,50 @@
+[
+	{
+		"ParameterKey": "EnvironmentName",
+		"ParameterValue": "Databases"
+	},
+	{
+        "ParameterKey": "NetworkEnvironmentName",
+        "ParameterValue": "SimpleVPCNetwork"
+    },
+	{
+        "ParameterKey": "SecurityAndServersEnvironmentName",
+        "ParameterValue": "SecurityAndServers"
+    },
+	{
+		"ParameterKey": "Database1InstanceIdentifier",
+		"ParameterValue": "MySQLDatabase1"
+	},
+	{
+		"ParameterKey": "Database1Name",
+		"ParameterValue": "Database1"
+	},
+	{
+		"ParameterKey": "Database2InstanceIdentifier",
+		"ParameterValue": "MySQLDatabase2"
+	},
+	{
+		"ParameterKey": "Database2Name",
+		"ParameterValue": "Database2"
+	},
+	{
+		"ParameterKey": "DatabaseUser",
+		"ParameterValue": "dbadmin"
+	},
+	{
+		"ParameterKey": "DatabasePassword",
+		"ParameterValue": "UTSAcc2022"
+	},
+	{
+		"ParameterKey": "DatabaseBackupRetentionPeriod",
+		"ParameterValue": "0"
+	},
+	{
+		"ParameterKey": "DatabaseAllocatedStorage",
+		"ParameterValue": "5"
+	},
+	{
+		"ParameterKey": "DatabaseInstanceClass",
+		"ParameterValue": "db.t2.micro"
+	}
+]
