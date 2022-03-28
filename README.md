@@ -49,7 +49,9 @@ Infrastructure Layout:
         - Private Subnet 2: CIDR = 10.0.3.0/16
             - Ec2 Instance: Runs Apache Web Server
             - Database Instance: Runs a MySQL database
-            - Ec2 Volume: Adds storage to the Ec2 instanc
+            - Ec2 Volume: Adds storage to the Ec2 instance
+
+![Cloud Infrastructure]("Cloud Infrastructure.png")
 
 ### Delpoying the Infrastructure:
 In an AWS CLI, enter these commands one by one in the order given: 
