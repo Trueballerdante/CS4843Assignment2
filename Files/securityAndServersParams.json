@@ -14,5 +14,9 @@
     {
         "ParameterKey": "KeyName",
         "ParameterValue": "cloudComputing2022"
+    },
+    {
+        "ParameterKey": "JumpBoxKeyName",
+        "ParameterValue": "jumpboxKey"
     }
 ]

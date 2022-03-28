@@ -12,7 +12,10 @@ Parameters:
     Description: The ami that is used
     Type: String
   KeyName:
-    Description: The key to use
+    Description: The key to use in the private servers
+    Type: String
+  JumpBoxKeyName:
+    Description: The key to use in the jumpbox
     Type: String
 Resources:
   ServerSecurityGroup:
@@ -27,7 +30,7 @@ Resources:
         - IpProtocol: tcp
           FromPort: 22
           ToPort: 22
-          CidrIp: 0.0.0.0/0
+          SourceSecurityGroupId: !Ref JumpBoxSecurityGroup
       SecurityGroupEgress:
         - IpProtocol: tcp
           FromPort: 0
@@ -166,6 +169,57 @@ Resources:
             systemctl start httpd.service
             systemctl enable httpd.service
             echo Hello World from Apache Server 2 > /var/www/html/index.html
+
+# Create the JumpBoxSecurityGroup in pieces to avoid circular dependency
+
+  JumpBoxSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Security group for the jumpbox host
+      VpcId: !Select [ 0, [Fn::ImportValue: !Sub '${NetworkEnvironmentName}-VPCId']]
+  
+  JumpBoxAllowInboundSSH:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      GroupId: !Ref JumpBoxSecurityGroup
+      IpProtocol: tcp
+      FromPort: 22
+      ToPort: 22
+      CidrIp: 0.0.0.0/0
+
+  JumpBoxAllowOutboundSSH:
+    Type: AWS::EC2::SecurityGroupEgress
+    Properties:
+      GroupId: !Ref JumpBoxSecurityGroup
+      IpProtocol: tcp
+      FromPort: 22
+      ToPort: 22
+      DestinationSecurityGroupId: !Ref ServerSecurityGroup
+
+
+  JumpBox1:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: !Ref AMItoUse
+      InstanceType: t2.micro
+      KeyName: !Ref JumpBoxKeyName
+      SecurityGroupIds: [!GetAtt JumpBoxSecurityGroup.GroupId]
+      SubnetId: !Select [ 0, [Fn::ImportValue: !Sub '${NetworkEnvironmentName}-PublicSubnet1Id']]
+      Tags:
+        - Key: Name
+          Value: jumpBox1
+  
+  JumpBox2:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: !Ref AMItoUse
+      InstanceType: t2.micro
+      KeyName: !Ref JumpBoxKeyName
+      SecurityGroupIds: [!GetAtt JumpBoxSecurityGroup.GroupId]
+      SubnetId: !Select [ 0, [Fn::ImportValue: !Sub '${NetworkEnvironmentName}-PublicSubnet2Id']]
+      Tags:
+        - Key: Name
+          Value: jumpBox2
 
 Outputs:
   ServerSercurityGroupId:
