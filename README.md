@@ -2,43 +2,54 @@
 ## Description:
 Using AWS, creates a cloud infrastructure for a web application. 
 ### Technologies Used:
+- Amazon Web Services(AWS): Used to deploy the infrastructure
 - YAML: Used to write the infrastructure as code.
 - JSON: Used to write the parameters.
 
 ### Infrastructure:
 AWS's Cloudformation was utilized to create the infrastructure.
-Three YAML files are utilised to set up specific parts of the infrastructure:
+Three YAML files are used to set up specific parts of the infrastructure:
 - network.yaml:
     Creates:
     - A Virtual Private Cloud(VPC)
     - An internet gateway
     - Two Public and Two private subnets
-    - A NAT gateway for each public subnet
+    - A NAT gateway, with an elastic ip, for each public subnet
 - securityAndServers.yaml:
     Creates:
-    - Two EC2 instances that run Apache Web Server.
-    - An Elastic Load Balancer
-    - Security Groups for the servers
+    - Two EC2 instances, placed in private subnsets, that run Apache Web Server.
+    - Two EC2 instances, placed in public subnsets, that are used as a jumpbox/Bastion Host.
+    - A Load Balancer
+    - An Auto Scaling Group
+    - Security Groups for the servers and jumpboxes
 - databaseAndStorage.yaml:
     Creates:
     - Two MySQL databases
-    - Creates two EC2 Volumes
+    - Two EC2 Volumes
 
 Infrastructure Layout:
 AWS Region: US West (Oregon) us-west-2
 - Virtual Private Cloud(VPC): CIDR = 10.0.0.0/16
+    - Load Balancer: Used to distribute incoming network traffic
+    - Auto Scaling Group: Automates how groups of different resources respond to changes in demand
     - First Availablility Zone:
         - Public Subnet 1: CIDR = 10.0.0.0/24
-            - Nat Gateway 1: Allows Private Subnet 1 egress internet access
+            - Nat Gateway: Allows Private Subnet 1 egress internet access
+                - Elastic IP: Gives the NAT Gatway a fixed consistent IP address. 
+            - Ec2 instance: Used as a jumpbox to ssh into the private instance
         - Private Subnet 1: CIDR = 10.0.2.0/16
             - Ec2 Instance: Runs Apache Web Server
             - Database Instance: Runs a MySQL database
+            - Ec2 Volume: Adds storage to the Ec2 instance
     - Second Availablility Zone:
         - Public Subnet 2: CIDR = 10.0.1.0/16
-            - Nat Gateway 1: Allows Private Subnet 1 egress internet access
+            - Nat Gateway: Allows Private Subnet 2 egress internet access
+                - Elastic IP: Gives the NAT Gatway a fixed consistent IP address. 
+            - Ec2 instance: Used as a jumpbox to ssh into the private instance
         - Private Subnet 2: CIDR = 10.0.3.0/16
             - Ec2 Instance: Runs Apache Web Server
             - Database Instance: Runs a MySQL database
+            - Ec2 Volume: Adds storage to the Ec2 instanc
 
 ### Delpoying the Infrastructure:
 In an AWS CLI, enter these commands one by one in the order given: 
