@@ -28,7 +28,7 @@ Three YAML files are used to set up specific parts of the infrastructure:
     - Two EC2 Volumes
 
 Infrastructure Layout:
-AWS Region: US West (Oregon) us-west-2
+- AWS Region: US West (Oregon) us-west-2
 - Virtual Private Cloud(VPC): CIDR = 10.0.0.0/16
     - Load Balancer: Used to distribute incoming network traffic
     - Auto Scaling Group: Automates how groups of different resources respond to changes in demand
